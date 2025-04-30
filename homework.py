@@ -81,25 +81,26 @@ def get_api_answer(timestamp):
     try:
         logging.debug(f'Начинаем запрос к API: {ENDPOINT}, {payload}')
         response = requests.get(ENDPOINT, headers=HEADERS, params=payload)
-        logging.debug(f'Ответ API: {response.json()}')
+        logging.debug('Ответ API получен')
     except requests.exceptions.RequestException as error:
         raise EndpointUnavailableError(f'Ошибка при запросе к API: {error}')
-    except json.JSONDecodeError as error:
-        raise JSONDecodeError(f'Ошибка при обработке ответа API: {error}')
 
     if response.status_code != HTTPStatus.OK:
         raise EndpointUnavailableError(
             f'Эндпоинт недоступен. Код ответа: {response.status_code}'
         )
 
-    return response.json()
+    try:
+        return response.json()
+    except json.JSONDecodeError as error:
+        raise JSONDecodeError(f'Ошибка при обработке ответа API: {error}')
 
 
 def check_response(response):
     """Проверяет ответ API на соответствие документации."""
     if not isinstance(response, dict):
         raise TypeError(
-            f'Ответ API не соответствует ожидаемой структуре. '
+            'Ответ API не соответствует ожидаемой структуре. '
             f'Получен тип: {type(response)}'
         )
 
@@ -164,6 +165,7 @@ def main():
                         'current_date',
                         current_timestamp
                     )
+                    last_error_message = None
             else:
                 logging.debug('Нет новых статусов')
         except Exception as error:
